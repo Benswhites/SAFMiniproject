@@ -1,0 +1,21 @@
+PROGRAM PLC_PRG
+
+VAR
+    state: UINT := 0;
+    TCPclient: dc_ecp.TcpClientString;
+    dataIn: DWORD;
+    dataOut: DWORD;
+    RFID: dc_ecp.Dtm425;
+    rfidData: dc_ecp.st_CPF_RfidData;
+    CarrierID: UINT;
+    CarrierString: STRING;
+    CarrierD: DWORD;
+    timer: TON;
+    Carir: STRING;
+    dTime: DATE_AND_TIME;
+    dDatenTime: DTU.GetDateAndTime;
+    dateTimeString: STRING;
+    sendString: STRING;
+    space: STRING;
+    count: STRING;
+END_VAR

@@ -1,0 +1,211 @@
+CASE state OF
+	
+	0: //initialization
+	IO.xQA3_BRAKE := FALSE;
+	IO.xQA3_DOWN := FALSE;
+	IO.xQA3_UP := TRUE;
+	
+	IO.xQA2_LEFT := FALSE;
+	IO.xQA2_RIGHT := TRUE;
+	
+	IO.xQA1_RIGHT := TRUE;
+	IO.xMB20 := FALSE;
+	RFID.ClearError();
+	TCPclient.Connect(sIP:='172.20.66.28', uiPort:=65000);  // Set desired IP and Port of server 
+	//TCPcient.Connect(sIP:='172.0.0.1', uiPort:=65000);
+	state := 1;
+	
+	1: //wait for tcp connect
+	IF TCPclient.xConnected AND TCPclient.xReady THEN
+		state := 11;
+	ELSE
+		state := 2;
+	END_IF
+	
+	11: //wait for rfid
+	IF RFID.xReady THEN
+		RFID.Connect(usiNodeId:=32,usiNetworkId:=0,usiChannel:=1);
+		state := 12;
+	END_IF
+	
+	12: //wait for RFID to connect
+	IF RFID.xReady THEN
+		state := 2;
+	END_IF
+	
+	2: //wait for carrier
+	IO.xQA1_RIGHT := TRUE;
+	IF io.xBG21 = TRUE THEN
+		// Read Carrier tag
+		timer(IN:=TRUE, PT:=T#1S);
+		state := 301;
+	END_IF
+	
+	301: //wait for timer
+	IF timer.Q = TRUE THEN
+		timer(IN:=FALSE);
+		state := 3;
+	END_IF
+	
+	3: //read RFID tag
+	RFID.ReadTag(uiStartAddress:=0, uiDataLength:=SIZEOF(rfidData), ADR(rfidData));
+	CarrierID := dc_ecp.SwapWORD(rfidData.uiCarrierID);
+	CarrierString := UINT_TO_STRING(CarrierID);
+	CarrierD := STRING_TO_DWORD(CarrierString);
+	state := 31;
+	
+	31:
+	IF RFID.xReady = TRUE THEN
+		RFID.ReadTag(uiStartAddress:=0, uiDataLength:=SIZEOF(rfidData), ADR(rfidData));
+		CarrierID := dc_ecp.SwapWORD(rfidData.uiCarrierID);
+		CarrierString := UINT_TO_STRING(CarrierID);
+		CarrierD := STRING_TO_DWORD(CarrierString);
+		state := 321; //32
+	END_IF
+	
+	321: //get time and date
+	dDatenTime.xExecute := TRUE;
+	state := 322;
+	
+	322: //wait for time
+	IF dDatenTime.xDone THEN
+		dTime := dDatenTime.dtDateAndTime;
+		dateTimeString := DT_TO_STRING(dTime);
+		dDatenTime.xExecute := FALSE;
+		state := 32;
+	END_IF
+	
+	32: //wait for send
+	TCPclient.Send(sMessage:=CarrierString);
+	//TCPclient.Send(pToSend:=ADR(CarrierString), uiSizeToSend:=SIZEOF(CarrierString));
+	timer(IN:=TRUE, PT:=T#1S);
+	state := 331;
+	
+	331: //wait for timer
+	IF timer.Q = TRUE THEN
+		timer(IN:=FALSE);
+		state := 33;
+	END_IF
+	
+	33:
+	IF TCPclient.xReady = TRUE THEN
+		// Receive information from TCP
+		//TCPclient.Send(sMessage:=dateTimeString);
+		//TCPclient.Receive(pToReceive:=ADR(dataIn), uiSizeToReceive:=SIZEOF(dataIn));
+		state := 4;
+	END_IF
+	
+	4: //wait for receive
+	IF TCPclient.xReady = TRUE THEN
+		state := 40;
+	END_IF
+	
+	// SAFETY
+	40:
+	IF IO.xBG3 = FALSE AND IO.xBG8 = FALSE AND IO.xBG4 = TRUE THEN
+		state := 401;
+	ELSE
+		state := 46;
+	END_IF
+	
+	401: //get time and date
+	dDatenTime.xExecute := TRUE;
+	state := 402;
+	
+	402: //wait for time
+	IF dDatenTime.xDone THEN
+		dTime := dDatenTime.dtDateAndTime;
+		dateTimeString := DT_TO_STRING(dTime);
+		dDatenTime.xExecute := FALSE;
+		state := 403;
+	END_IF
+	
+	403:
+	IF TCPclient.xReady = TRUE THEN
+		// Receive information from TCP
+		TCPclient.Send(sMessage:=dateTimeString);
+		//TCPclient.Receive(pToReceive:=ADR(dataIn), uiSizeToReceive:=SIZEOF(dataIn));
+		state := 41;
+	END_IF
+	
+	41:
+	IO.xQA2_RIGHT := FALSE;
+	IO.xQA2_LEFT := TRUE;
+	IF IO.xBG1 = TRUE AND IO.xBG2 = FALSE THEN
+		state:= 42;
+	END_IF
+	
+	42:
+	IO.xQA3_BRAKE := TRUE;
+	IO.xQA3_UP := FALSE;
+	IO.xQA3_DOWN := TRUE;
+	
+	IF IO.xBG6 = TRUE AND IO.xBG5 = FALSE THEN
+		state := 43;
+	END_IF
+	
+	43:
+	IO.xQA3_UP := TRUE;
+	IO.xQA3_DOWN := FALSE;
+	
+	IF IO.xBG5 = TRUE AND IO.xBG6 = FALSE THEN
+		IO.xQA3_BRAKE := FALSE;
+		state := 44;
+	END_IF
+	
+	44:
+	IO.xQA2_RIGHT := TRUE;
+	IO.xQA2_LEFT := FALSE;
+	IF IO.xBG1 = FALSE AND IO.xBG2 = TRUE THEN
+		state := 45;
+	END_IF
+	
+	45:
+	IO.xQA3_BRAKE := TRUE;
+	IO.xQA3_UP := FALSE;
+	IO.xQA3_DOWN := TRUE;
+	
+	IF IO.xBG6 = TRUE AND IO.xBG5 = FALSE THEN
+		state := 46;
+	END_IF
+	
+	46:
+	IO.xQA3_UP := TRUE;
+	IO.xQA3_DOWN := FALSE;
+	
+	IF IO.xBG5 = TRUE AND IO.xBG6 = FALSE THEN
+		IO.xQA3_BRAKE := FALSE;
+		io.xMB20 := TRUE;
+		dDatenTime.xExecute := TRUE;
+		state := 501;
+	END_IF
+		
+	501: //wait for time
+	IF dDatenTime.xDone THEN
+		dTime := dDatenTime.dtDateAndTime;
+		dateTimeString := DT_TO_STRING(dTime);
+		dDatenTime.xExecute := FALSE;
+		state := 502;
+	END_IF
+	
+	502:
+	IF TCPclient.xReady = TRUE THEN
+		// Receive information from TCP
+		TCPclient.Send(sMessage:=dateTimeString);
+		//TCPclient.Receive(pToReceive:=ADR(dataIn), uiSizeToReceive:=SIZEOF(dataIn));
+		state := 5;
+	END_IF
+	
+	
+	
+	5: //wait for carrier to pass
+	IF IO.xBG21 = FALSE THEN
+		io.xMB20 := FALSE;
+		state := 1;
+	END_IF
+END_CASE 
+
+TCPclient();
+RFID();
+timer();
+dDatenTime();

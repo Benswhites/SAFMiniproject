@@ -1,15 +1,15 @@
 CASE state OF
 	
 	0: //initialization
-	IO.xQA3_BRAKE := FALSE;
-	IO.xQA3_DOWN := FALSE;
-	IO.xQA3_UP := TRUE;
+	IO.xQA3_BRAKE := FALSE;  //xQA3_BRAKE is Drill brake
+	IO.xQA3_DOWN := FALSE;  //xQA3_DOWN is Drill brake
+	IO.xQA3_UP := TRUE;  //xQA3_UP is Drill up
 	
-	IO.xQA2_LEFT := FALSE;
-	IO.xQA2_RIGHT := TRUE;
+	IO.xQA2_LEFT := FALSE;  //xQA2_LEFT is Drill left
+	IO.xQA2_RIGHT := TRUE;  //xQA2_RIGHT is Drill right
 	
-	IO.xQA1_RIGHT := TRUE;
-	IO.xMB20 := FALSE;
+	IO.xQA1_RIGHT := TRUE;  //xQA1_RIGHT is Conveyor Right
+	IO.xMB20 := FALSE;  /xMB20 is Release stopper
 	RFID.ClearError();
 	TCPclient.Connect(sIP:='172.20.66.28', uiPort:=65000);  // Set desired IP and Port of server 
 	//TCPcient.Connect(sIP:='172.0.0.1', uiPort:=65000);
@@ -34,8 +34,8 @@ CASE state OF
 	END_IF
 	
 	2: //wait for carrier
-	IO.xQA1_RIGHT := TRUE;
-	IF io.xBG21 = TRUE THEN
+	IO.xQA1_RIGHT := TRUE;  //xQA1_RIGHT is Conveyor right
+	IF io.xBG21 = TRUE THEN  //xBG21 is Carrier available
 		// Read Carrier tag
 		timer(IN:=TRUE, PT:=T#1S);
 		state := 301;
@@ -102,7 +102,7 @@ CASE state OF
 	
 	// SAFETY
 	40:
-	IF IO.xBG3 = FALSE AND IO.xBG8 = FALSE AND IO.xBG4 = TRUE THEN
+	IF IO.xBG3 = FALSE AND IO.xBG8 = FALSE AND IO.xBG4 = TRUE THEN  //xBG3 is Optical cover flipped, xBG8 is Optical top cover detect, xBG4 is Optical cover detect
 		state := 401;
 	ELSE
 		state := 46;
@@ -131,51 +131,51 @@ CASE state OF
 	41:
 	IO.xQA2_RIGHT := FALSE;
 	IO.xQA2_LEFT := TRUE;
-	IF IO.xBG1 = TRUE AND IO.xBG2 = FALSE THEN
+	IF IO.xBG1 = TRUE AND IO.xBG2 = FALSE THEN  //xBG1 is Drill left, xBG2 is Drill right
 		state:= 42;
 	END_IF
 	
 	42:
-	IO.xQA3_BRAKE := TRUE;
-	IO.xQA3_UP := FALSE;
-	IO.xQA3_DOWN := TRUE;
+	IO.xQA3_BRAKE := TRUE;  //xQA3_BRAKE is Drill brake
+	IO.xQA3_UP := FALSE;  //xQA3_UP is Drill up
+	IO.xQA3_DOWN := TRUE;  /xQA3_DOWN is Drill down
 	
-	IF IO.xBG6 = TRUE AND IO.xBG5 = FALSE THEN
+	IF IO.xBG6 = TRUE AND IO.xBG5 = FALSE THEN  //xBG6 is Drill down, xBG5 is Drill up
 		state := 43;
 	END_IF
 	
 	43:
-	IO.xQA3_UP := TRUE;
-	IO.xQA3_DOWN := FALSE;
+	IO.xQA3_UP := TRUE; //xQA3_UP is Drill up
+	IO.xQA3_DOWN := FALSE;  //xQA3_DOWN is Drill down
 	
-	IF IO.xBG5 = TRUE AND IO.xBG6 = FALSE THEN
-		IO.xQA3_BRAKE := FALSE;
+	IF IO.xBG5 = TRUE AND IO.xBG6 = FALSE THEN  //xBG5 is Drill up, xBG6 is Drill down
+		IO.xQA3_BRAKE := FALSE;  //xQA3_BRAKE is Drill brake
 		state := 44;
 	END_IF
 	
 	44:
-	IO.xQA2_RIGHT := TRUE;
-	IO.xQA2_LEFT := FALSE;
-	IF IO.xBG1 = FALSE AND IO.xBG2 = TRUE THEN
+	IO.xQA2_RIGHT := TRUE;  //xQA2_RIGHT is Drill right
+	IO.xQA2_LEFT := FALSE;  //xQA2_LEFT is Drill left
+	IF IO.xBG1 = FALSE AND IO.xBG2 = TRUE THEN //xBG1 is Drill left, xBG2 is Drill right
 		state := 45;
 	END_IF
 	
 	45:
-	IO.xQA3_BRAKE := TRUE;
-	IO.xQA3_UP := FALSE;
-	IO.xQA3_DOWN := TRUE;
+	IO.xQA3_BRAKE := TRUE;  //xQA3_BRAKE is Drill brake
+	IO.xQA3_UP := FALSE;  //xQA3_UP is Drill up
+	IO.xQA3_DOWN := TRUE; //xQA3_DOWN is Drill down
 	
-	IF IO.xBG6 = TRUE AND IO.xBG5 = FALSE THEN
+	IF IO.xBG6 = TRUE AND IO.xBG5 = FALSE THEN  //xBG6 is Drill down, xBG5 is Drill up
 		state := 46;
 	END_IF
 	
 	46:
-	IO.xQA3_UP := TRUE;
-	IO.xQA3_DOWN := FALSE;
+	IO.xQA3_UP := TRUE;  //xQA3_UP is Drill up
+	IO.xQA3_DOWN := FALSE;  //xQA3_DOWN is Drill down
 	
-	IF IO.xBG5 = TRUE AND IO.xBG6 = FALSE THEN
-		IO.xQA3_BRAKE := FALSE;
-		io.xMB20 := TRUE;
+	IF IO.xBG5 = TRUE AND IO.xBG6 = FALSE THEN  //xBG5 is Drill up, xBG6 is Drill down
+		IO.xQA3_BRAKE := FALSE;  //xQA3_BRAKE is Drill brake
+		io.xMB20 := TRUE;  //xMB20 is Release stopper
 		dDatenTime.xExecute := TRUE;
 		state := 501;
 	END_IF
@@ -199,8 +199,8 @@ CASE state OF
 	
 	
 	5: //wait for carrier to pass
-	IF IO.xBG21 = FALSE THEN
-		io.xMB20 := FALSE;
+	IF IO.xBG21 = FALSE THEN  //xBG21 is Carrier available
+		io.xMB20 := FALSE;  //xMB20 is Release stopper
 		state := 1;
 	END_IF
 END_CASE 
